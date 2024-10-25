@@ -1,92 +1,191 @@
-#필요한 패키지 불러오기
+
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
-from statsmodels.tsa.holtwinters import ExponentialSmoothing
 
-# 1. 시계열 모델
-	# ARIMA (AutoRegressive Integrated Moving Average): 주가 데이터가 계절성을 보이지 않거나 안정적인 경우에 적합합니다.
-	# SARIMA (Seasonal ARIMA): 계절성이 있는 주가 데이터에 적합합니다.
-	# Exponential Smoothing: 당신이 사용한 것처럼, 간단하게 예측할 수 있는 모델입니다. 계절성을 고려한 Holt-Winters 방법도 가능합니다.
-# 2. 머신러닝 모델
-	# 랜덤 포레스트 (Random Forest): 주가 데이터를 예측하기 위해 사용할 수 있는 강력한 앙상블 모델입니다. 다양한 특성을 입력으로 사용할 수 있습니다.
-	# XGBoost: 부스팅 방법론을 사용하여 성능이 뛰어난 예측 모델을 구축할 수 있습니다.
-	# 신경망 (Neural Networks): LSTM(Long Short-Term Memory)과 같은 순환 신경망(RNN)은 시계열 데이터에 적합하며, 긴 시퀀스를 기억하고 처리할 수 있는 장점이 있습니다.
-# 3. 추가적인 고려사항
-	# 특성 엔지니어링: 주가 데이터는 여러 외부 요인에 영향을 받기 때문에, 이동 평균, 변동성, 거래량 등의 특성을 추가하면 예측 성능을 향상시킬 수 있습니다.
-	# 전처리: 데이터의 정상성 확인, 로그 변환, 차분 등을 통해 시계열 데이터를 안정화할 수 있습니다.
-	# 교차 검증: 시계열 데이터는 일반적인 교차 검증 방법을 사용할 수 없기 때문에, 시간 기반의 교차 검증 방법을 사용해야 합니다.
-# 4. 예측 방법
-	# 시뮬레이션: 잔차의 분포를 고려한 시뮬레이션을 통해 불확실성을 평가할 수 있습니다.
-	# 배깅/부스팅: 여러 모델을 조합하여 예측의 정확도를 높일 수 있습니다.
+# 그래프를 그리는 함수 정의
+def plot_moving_average(df, column_name, window_size):
+	# 그래프 그리기
+	plt.figure(figsize=(12, 6))
+	plt.plot(df[column_name], label='Original Data', color='blue', alpha=0.6)
+	plt.plot(df['Moving_Average'], label=f'{window_size}-Day Moving Average', color='orange', linewidth=2)
+	plt.title('Time Series and Moving Average')
+	plt.xlabel('Date')
+	plt.ylabel(column_name)
+	plt.legend()
+	plt.grid()
+	plt.show()
 
-## 자동차 판매 데이터 https://www.hyundai.com/worldwide/ko/company/ir/ir-resources/sales-results
-origin_data = pd.read_csv('./combined_sorted.csv', encoding='cp949')
-origin_data['Month'] = origin_data['Month'].str.replace('-00', '-01') ## 데이터 형식이 00으로 끝나기 때문에 변경
-origin_data['Month'] = pd.to_datetime(origin_data['Month'], errors='coerce')
+# 그래프를 그리는 함수 정의
+def both_plot_moving_average(df, column_name, window_size):
+	# 그래프 그리기
+	plt.figure(figsize=(12, 6))
+	plt.plot(df[column_name], label='Original Data', color='blue', alpha=0.6)
+	plt.plot(df['Moving_Average'], label=f'{window_size}-Day Moving Average', color='orange', linewidth=2)
+	plt.plot(df['Double_Moving_Average'], label=f'Double {window_size}-Day Moving Average', color='green', linewidth=2)
+	plt.title('Time Series and Moving Averages')
+	plt.xlabel('Date')
+	plt.ylabel(column_name)
+	plt.legend()
+	plt.grid()
+	plt.show()
 
-origin_data['판매량'] = pd.to_numeric(origin_data['판매량'], errors='coerce')
-origin_data.dropna(inplace=True)  # NaN 제거
+# 성능 지표 계산 함수
+def calculate_metrics(actual, predicted):
+	mse = np.mean((actual - predicted) ** 2)
+	rmse = np.sqrt(mse)
+	mad = np.mean(np.abs(actual - predicted))
+	mape = np.mean(np.abs((actual - predicted) / actual)) * 100
+	return mse, rmse, mad, mape
 
-# # 모델별로 그룹화
-# cleaned_data = []
+# 이중 지수 평활법 적용 함수
+def double_exponential_smoothing(series, alpha, beta):
+	n = len(series)
+	level = np.zeros(n)
+	trend = np.zeros(n)
+	smoothed = np.zeros(n)
+	level[0] = series[0]
+	trend[0] = series[1] - series[0]
+	for t in range(1, n):
+		if t == 1: smoothed[t] = level[0]
+		else: smoothed[t] = level[t-1] + trend[t-1]
+		level[t] = alpha * series[t] + (1 - alpha) * (level[t-1] + trend[t-1])
+		trend[t] = beta * (level[t] - level[t-1]) + (1 - beta) * trend[t-1]
 
-# for model_name, group in origin_data.groupby('모델'):
-#     # 중복된 날짜에서 판매량이 가장 큰 레코드만 선택
-#     group = group.loc[group.groupby('Month')['판매량'].idxmax()]
+	return smoothed
+
+## 홀트모형
+def holt_smoothing(series, alpha, beta):
+	level = series[0]
+	trend = series[1] - series[0]
+	smoothed_values = [level + trend]
 	
-#     cleaned_data.append(group)
-
-# # 모든 모델의 데이터를 하나의 DataFrame으로 결합
-# cleaned_data = pd.concat(cleaned_data, ignore_index=True)
-# cleaned_data.to_csv("cleaning_data.csv", encoding='cp949')
-
-# 모델별로 그룹화
-for model_name, group in origin_data.groupby('모델'):
-	# 중복된 날짜 찾기
-	duplicate_dates = group[group['Month'].duplicated(keep=False)]
+	for i in range(1, len(series)):
+		last_level = level
+		level = alpha * series[i] + (1 - alpha) * (level + trend)
+		trend = beta * (level - last_level) + (1 - beta) * trend
+		smoothed_values.append(level + trend)
 	
-	if not duplicate_dates.empty:
-		print(f"{model_name}에서 중복된 날짜:")
-		print(duplicate_dates)
+	return np.array(smoothed_values)
 
-# 차량 종류별 모델 피팅
-models = {}
-for model_name, group in origin_data.groupby('모델'):
-    group = group.groupby('Month').last().reset_index()
-    group.set_index('Month', inplace=True)
-    group = group.asfreq('M')  # 월별 주기 설정
+# 윈터스 모형 적용 함수
+def winters_smoothing(series, alpha, beta, gamma, seasonal_periods, model_type='additive'):
+    n = len(series)
+    seasonal = np.zeros(seasonal_periods)
+    level = series[0]
+    trend = series[1] - series[0]
+    
+    # 계절성 초기화
+    for i in range(seasonal_periods):
+        seasonal[i] = series[i] / level if model_type == 'multiplicative' else series[i] - level
 
-    if len(group) > 0:
-        try:
-            model = ExponentialSmoothing(group['판매량'], seasonal=None).fit()
-            models[model_name] = model
-            # print(f"{model_name} 모델 피팅 성공, 매개변수: {model.params}")
-        except Exception as e:
-            print(f"{model_name} 모델 피팅 중 에러 발생: {e}")
-    else:
-        # print(f"{model_name}의 유효한 데이터가 부족합니다: {len(group)}개의 데이터 포인트.")
-        pass
+    smoothed_values = np.zeros(n)
+    
+    for t in range(n):
+        if t == 0:
+            smoothed_values[t] = level
+        else:
+            if model_type == 'additive':
+                smoothed_values[t] = level + trend + seasonal[t % seasonal_periods]
+            else:
+                smoothed_values[t] = (level + trend) * seasonal[t % seasonal_periods]
 
-# 예측할 경우
-for model_name, model in models.items():
-    forecast = model.forecast(steps=12)  # 다음 12개월 예측
-    if forecast.isna().any():
-        # print(f"{model_name}의 예측 결과가 NaN입니다.")
-        pass
-    else:
-        print(f"{model_name}의 예측: {forecast}")
-        
-        
-        
-# 모델의 복잡성:
+        last_level = level
+        level = alpha * (series[t] - seasonal[t % seasonal_periods]) + (1 - alpha) * (level + trend)
+        trend = beta * (level - last_level) + (1 - beta) * trend
+        seasonal[t % seasonal_periods] = gamma * (series[t] - level) + (1 - gamma) * seasonal[t % seasonal_periods]
+    
+    return smoothed_values
 
-# 단순한 모델 (예: 단순 이동 평균, 지수 평활법 등)에는 몇 개월에서 1년 정도의 데이터로도 충분할 수 있습니다.
-# 복잡한 모델 (예: ARIMA, SARIMA, LSTM 등)에는 적어도 3년 이상의 데이터가 필요합니다. 특히 계절성을 고려하는 모델은 계절 주기보다 2배 이상의 데이터가 필요합니다.
-# 데이터의 주기성:
+# 분해법 모형 적용 함수
+def seasonal_decompose(series, model_type):
+    trend = series.rolling(window=12, center=True).mean()
+    if model_type == 'additive':
+        seasonal = series - trend
+    else:  # multiplicative
+        seasonal = series / trend
+    seasonal = seasonal.rolling(window=12, center=True).mean()
+    return trend, seasonal
 
-# 일간 데이터: 1~3년
-# 주간 데이터: 2~5년
-# 월간 데이터: 3~10년
-# 연간 데이터: 10년 이상
+book_sales = pd.read_csv(
+	"./data/book_sales.csv",
+	index_col = 'Date',
+	parse_dates=['Date']
+	)
+df = book_sales.copy()
+df['Time'] = np.arange(len(book_sales.index))
+column_name = 'Hardcover'
+window_size = 15
+
+# tunnel = pd.read_csv(
+# 	"./data/tunnel.csv", 
+# 	index_col = 'Day',
+# 	parse_dates=['Day'])
+# df = tunnel.copy()
+# df['Time'] = np.arange(len(tunnel.index))
+# column_name = 'NumVehicles'
+# window_size = 30
+
+'''단순 이동평균법'''
+df['Moving_Average'] = df[column_name].rolling(window=window_size).mean() # plot_moving_average(df, column_name, window_size)
+
+'''이중 이동 평균 계산'''
+df['Double_Moving_Average'] = df['Moving_Average'].rolling(window=window_size).mean() # plot_moving_average(df, column_name, window_size)
+
+# 단순 지수 평활법 적용
+alpha = 0.2  # 평활 계수
+df['SES'] = df[column_name].ewm(alpha=alpha, adjust=False).mean() # plot_moving_average(df, column_name, window_size)
+
+# 이중 지수 평활법
+beta = 0.2
+df['Double_Exponential_Smoothing'] = double_exponential_smoothing(df[column_name].values, alpha, beta)
+
+# 홀트 모형 적용
+alpha = 0.8  # 수준 평활 계수
+beta = 0.2   # 추세 평활 계수
+df['Holt_Smoothing'] = holt_smoothing(df[column_name].values, alpha, beta)
+
+
+alpha = 0.8  # 수준 평활 계수
+beta = 0.2   # 추세 평활 계수
+gamma = 0.1  # 계절성 평활 계수
+seasonal_periods = 12  # 계절성 주기
+n_preds = 12  # 예측할 기간 수
+
+# 윈터스 모형 적용 (가법)
+df['Winters_Additive'] = winters_smoothing(df[column_name].values, alpha, beta, gamma, seasonal_periods, model_type='additive')
+# 윈터스 모형 적용 (승법)
+df['Winters_Multiplicative'] = winters_smoothing(df[column_name].values, alpha, beta, gamma, seasonal_periods, model_type='multiplicative')
+
+# 분해법 모형 적용 (가법)
+trend_add, seasonal_add = seasonal_decompose(df[column_name], model_type='additive')
+df['Trend_Additive'] = trend_add
+df['Seasonal_Additive'] = seasonal_add
+df['Decomposed_Additive'] = df['Trend_Additive'] + df['Seasonal_Additive']
+
+# 분해법 모형 적용 (승법)
+trend_mul, seasonal_mul = seasonal_decompose(df[column_name], model_type='multiplicative')
+df['Trend_Multiplicative'] = trend_mul
+df['Seasonal_Multiplicative'] = seasonal_mul
+df['Decomposed_Multiplicative'] = df['Trend_Multiplicative'] * df['Seasonal_Multiplicative']
+
+metrics_ma = calculate_metrics(df[column_name].dropna(), df['Moving_Average'].dropna())
+metrics_dma = calculate_metrics(df[column_name].dropna(), df['Double_Moving_Average'].dropna())
+metrics_ses = calculate_metrics(df[column_name].dropna(), df['SES'].dropna()) ## 평활 계수를 고려
+metrics_des = calculate_metrics(df[column_name].dropna(), df['Double_Exponential_Smoothing'].dropna()) ## 평활계수와 시간에 따른 추세를 고려
+metrics_holt = calculate_metrics(df[column_name].dropna(), df['Holt_Smoothing'].dropna()) ## 장기예측에 적합
+metrics_winter_additive = calculate_metrics(df[column_name].dropna(), df['Winters_Additive'].dropna()) ## 홀트모형에 계절성을 추가반영하여 확장(가법)
+metrics_winter_multiplicative = calculate_metrics(df[column_name].dropna(), df['Winters_Multiplicative'].dropna()) ## 홀트모형에 계절성을 추가반영하여 확장(승법)
+metrics_decompose_additive = calculate_metrics(df[column_name].dropna(), df['Decomposed_Additive'].dropna())  # 추세와 계절성을 분해한 후 예측시 다시 결합(가법)
+metrics_decompose_multiplicative = calculate_metrics(df[column_name].dropna(), df['Decomposed_Multiplicative'].dropna())  # 추세와 계절성을 분해한 후 예측시 다시 결합(승법)
+
+
+print("단순 이동 평균 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_ma)
+print("이중 이동 평균 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_dma)
+print("단순 지수 평활법 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_ses)
+print("이중 지수 평활법 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_des)
+print("홀트 모형 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_holt)
+print("윈터스 모형-가법 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_winter_additive)
+print("윈터스 모형-승법 성능 지표 (MSE, RMSE, MAD, MAPE):", metrics_winter_multiplicative)
+print("분해법 성능 지표-가법 (MSE, RMSE, MAD, MAPE):", metrics_decompose_additive)
+print("분해법 성능 지표-승법 (MSE, RMSE, MAD, MAPE):", metrics_decompose_multiplicative)

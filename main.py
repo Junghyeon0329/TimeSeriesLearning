@@ -2,6 +2,9 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+'''
+MSE, RMSE, MAD, MAPE
+'''
 
 # 그래프를 그리는 함수 정의
 def plot_moving_average(df, column_name, window_size):

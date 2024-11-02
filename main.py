@@ -28,6 +28,7 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 # ##  이미지 데이터를 255로 나누어 0과 1 사이로 변환하는 것은 신경망 모델이 효과적으로 학습할 수 있도록 돕는 중요한 전처리 단계입니다.
 # x_train, x_test = x_train / 255.0, x_test / 255.0
+# 데이터 자체의 프레임을 조절해야함.
 
 # model = tf.keras.models.Sequential([
 #     tf.keras.layers.Flatten(input_shape = (28,28)), ## 2D 이미지를 1D 벡터로 변환

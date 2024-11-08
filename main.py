@@ -113,6 +113,7 @@ pred = logistic_regression_wo_vectorization(x_test, b, b0)
 print("Accuracy : ", accuracy(pred, y_test))
 
 # (2)
+## 벡터 변경
 # for step in range(training_step):
 #     a = logistic_regression(x_train, b, b0)
     

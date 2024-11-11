@@ -11,7 +11,7 @@ import tensorflow as tf
 import numpy as np
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # GPU 비활성화
+os.environ["CUDA_VISIBLE_DEVICES"] = "-1"  # GPU 비활성화
 print(tf.__version__)
 
 '''

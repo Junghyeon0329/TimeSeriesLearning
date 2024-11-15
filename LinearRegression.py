@@ -8,84 +8,84 @@ import seaborn as sns
 '''
 	first lesson
 '''
-# from warnings import simplefilter
-# simplefilter("ignore")  # ignore warnings to clean up output cells
-# plt.style.use("ggplot")  # ggplot 스타일 사용
+from warnings import simplefilter
+simplefilter("ignore")  # ignore warnings to clean up output cells
+plt.style.use("ggplot")  # ggplot 스타일 사용
 
-# plt.rc("figure", autolayout=True, figsize=(11, 4))
-# plt.rc("axes",labelweight="bold",labelsize="large",titleweight="bold",titlesize=14,titlepad=10,)
-# plot_params = dict(color="0.75",style=".-",markeredgecolor="0.25",markerfacecolor="0.25",legend=False,)
+plt.rc("figure", autolayout=True, figsize=(11, 4))
+plt.rc("axes",labelweight="bold",labelsize="large",titleweight="bold",titlesize=14,titlepad=10,)
+plot_params = dict(color="0.75",style=".-",markeredgecolor="0.25",markerfacecolor="0.25",legend=False,)
 
-# # Load Tunnel Traffic dataset
-# tunnel = pd.read_csv(
-#     "./data/tunnel.csv", 
-#     index_col = 'Day',
-#     parse_dates=['Day'])
+# Load Tunnel Traffic dataset
+tunnel = pd.read_csv(
+    "./data/tunnel.csv", 
+    index_col = 'Day',
+    parse_dates=['Day'])
 
-# tunnel = tunnel.to_period()
+tunnel = tunnel.to_period()
 
-# df = tunnel.copy()
-# df['Time'] = np.arange(len(tunnel.index))
+df = tunnel.copy()
+df['Time'] = np.arange(len(tunnel.index))
 
-# from sklearn.linear_model import LinearRegression
-# from sklearn.metrics import mean_squared_error
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error
 
-# # Training data
-# X = df.loc[:, ['Time']]  # features
-# y = df.loc[:, 'NumVehicles']  # target
+# Training data
+X = df.loc[:, ['Time']]  # features
+y = df.loc[:, 'NumVehicles']  # target
 
-# # Train the model
-# model = LinearRegression()
-# model.fit(X, y)
+# Train the model
+model = LinearRegression()
+model.fit(X, y)
 
-# # Store the fitted values as a time series with the same time index as
-# # the training data
-# y_pred = pd.Series(model.predict(X), index=X.index)
+# Store the fitted values as a time series with the same time index as
+# the training data
+y_pred = pd.Series(model.predict(X), index=X.index)
 
-# mse_time = mean_squared_error(y, y_pred)
-# print(f'Mean Squared Error (Time Model): {mse_time}')
-# # plot_params = dict(
-# #     color="0.75",
-# #     style=".-",
-# #     markeredgecolor="0.25",
-# #     markerfacecolor="0.25",
-# #     legend=False,
-# # )
+mse_time = mean_squared_error(y, y_pred)
+print(f'Mean Squared Error (Time Model): {mse_time}')
+# plot_params = dict(
+#     color="0.75",
+#     style=".-",
+#     markeredgecolor="0.25",
+#     markerfacecolor="0.25",
+#     legend=False,
+# )
 
-# # ax = y.plot(**plot_params)  # 실제 데이터 시각화
-# # ax = y_pred.plot(ax=ax, linewidth=3, color='orange', label='Predicted')  # 예측 데이터 시각화
-# # ax.set_title('Time Plot of Tunnel Traffic')
-# # ax.set_xlabel('Date')
-# # ax.set_ylabel('Number of Vehicles')
-# # ax.legend()
-# # plt.show()
+# ax = y.plot(**plot_params)  # 실제 데이터 시각화
+# ax = y_pred.plot(ax=ax, linewidth=3, color='orange', label='Predicted')  # 예측 데이터 시각화
+# ax.set_title('Time Plot of Tunnel Traffic')
+# ax.set_xlabel('Date')
+# ax.set_ylabel('Number of Vehicles')
+# ax.legend()
+# plt.show()
 
-# df['Lag_1'] = df['NumVehicles'].shift(1)
-# X = df.loc[:, ['Lag_1']]
-# X.dropna(inplace=True)  # drop missing values in the feature set
-# y = df.loc[:, 'NumVehicles']  # create the target
-# y, X = y.align(X, join='inner')  # drop corresponding values in target
+df['Lag_1'] = df['NumVehicles'].shift(1)
+X = df.loc[:, ['Lag_1']]
+X.dropna(inplace=True)  # drop missing values in the feature set
+y = df.loc[:, 'NumVehicles']  # create the target
+y, X = y.align(X, join='inner')  # drop corresponding values in target
 
-# model = LinearRegression()
-# model.fit(X, y)
+model = LinearRegression()
+model.fit(X, y)
 
-# y_pred = pd.Series(model.predict(X), index=X.index)
+y_pred = pd.Series(model.predict(X), index=X.index)
 
-# mse_lag = mean_squared_error(y, y_pred)
-# print(f'Mean Squared Error (Lag Model): {mse_lag}') 
-# '''
-# 	이전 속성값을 활용하여 LinearRegression()을 활용한 결과 오차가 더 작아짐
-# '''
+mse_lag = mean_squared_error(y, y_pred)
+print(f'Mean Squared Error (Lag Model): {mse_lag}') 
+'''
+	이전 속성값을 활용하여 LinearRegression()을 활용한 결과 오차가 더 작아짐
+'''
 
-# # fig, ax = plt.subplots()
-# # ax.plot(X['Lag_1'], y, '.', color='0.25')
-# # ax.plot(X['Lag_1'], y_pred)
-# # ax.set_aspect('equal')
-# # ax.set_ylabel('NumVehicles')
-# # ax.set_xlabel('Lag_1')
-# # ax.set_title('Lag Plot of Tunnel Traffic')
-# # ax.legend()
-# # plt.show()
+# fig, ax = plt.subplots()
+# ax.plot(X['Lag_1'], y, '.', color='0.25')
+# ax.plot(X['Lag_1'], y_pred)
+# ax.set_aspect('equal')
+# ax.set_ylabel('NumVehicles')
+# ax.set_xlabel('Lag_1')
+# ax.set_title('Lag Plot of Tunnel Traffic')
+# ax.legend()
+# plt.show()
 
 '''
 	second lesson

@@ -96,7 +96,7 @@ from warnings import simplefilter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+#
 simplefilter("ignore")  # ignore warnings to clean up output cells
 
 # Set Matplotlib defaults

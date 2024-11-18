@@ -96,9 +96,8 @@ from warnings import simplefilter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-#
-simplefilter("ignore")  # ignore warnings to clean up output cells
 
+simplefilter("ignore")  # ignore warnings to clean up output cells
 # Set Matplotlib defaults
 plt.style.use("ggplot")  # ggplot 스타일 사용
 plt.rc("figure", autolayout=True, figsize=(11, 5))
@@ -106,11 +105,7 @@ plt.rc("axes",labelweight="bold",labelsize="large",titleweight="bold",titlesize=
 plot_params = dict(color="0.75",style=".-",markeredgecolor="0.25",markerfacecolor="0.25",legend=False,)
 
 # Load Tunnel Traffic dataset
-tunnel = pd.read_csv(
-    "./data/tunnel.csv", 
-    index_col = 'Day',
-    parse_dates=['Day']
-    )
+tunnel = pd.read_csv("./data/tunnel.csv", index_col = 'Day', parse_dates=['Day'])
 
 tunnel = tunnel.to_period()
 moving_average = tunnel.rolling(
